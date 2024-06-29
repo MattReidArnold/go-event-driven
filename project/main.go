@@ -37,11 +37,12 @@ func main() {
 	spreadsheetsClient := clients.NewSpreadsheetsClient(c)
 	filesClient := clients.NewFilesClient(c)
 	deadNationClient := clients.NewDeadNationClient(c)
+	paymentsClient := clients.NewPaymentsClient(c)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	app := service.New(db, rdb, receiptsClient, spreadsheetsClient, filesClient, deadNationClient)
+	app := service.New(db, rdb, receiptsClient, spreadsheetsClient, filesClient, deadNationClient, paymentsClient, receiptsClient)
 
 	err = app.Run(ctx)
 	if err != nil {

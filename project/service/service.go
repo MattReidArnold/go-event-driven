@@ -33,6 +33,8 @@ func New(
 	spreadsheetsAPI event.SpreadsheetsAPI,
 	filesService event.FilesService,
 	deadNationService event.DeadNationService,
+	paymentRefunder command.PaymentRefunder,
+	receiptVoider command.ReceiptVoider,
 ) Service {
 	watermillLogger := log.NewWatermill(log.FromContext(context.Background()))
 
@@ -56,7 +58,7 @@ func New(
 		filesService,
 		eventBus,
 	)
-	commandHandler := command.NewHandler()
+	commandHandler := command.NewHandler(paymentRefunder, receiptVoider)
 
 	postgresSubscriber := outbox.NewPostgresSubscriber(dbConn.DB, watermillLogger)
 	eventProcessorConfig := event.NewProcessorConfig(rdb, watermillLogger)

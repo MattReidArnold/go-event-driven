@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"tickets/entities"
+	"tickets/message/command"
 
 	"github.com/ThreeDotsLabs/go-event-driven/common/clients"
 	"github.com/ThreeDotsLabs/go-event-driven/common/clients/receipts"
@@ -42,6 +43,20 @@ func (c receiptsClient) IssueReceipt(ctx context.Context, req entities.IssueRece
 
 	return nil
 }
+
+func (c receiptsClient) VoidReceipt(ctx context.Context, command *entities.RefundTicket) error {
+	_, err := c.clients.Receipts.PutVoidReceiptWithResponse(ctx, receipts.VoidReceiptRequest{
+		Reason:       "customer requested refund",
+		TicketId:     command.TicketID,
+		IdempotentId: &command.Header.IdempotencyKey,
+	})
+	if err != nil {
+		return fmt.Errorf("PUT void receipt request %s: %w", command.TicketID, err)
+	}
+	return nil
+}
+
+var _ command.ReceiptVoider = receiptsClient{}
 
 type ReceiptsServiceMock struct {
 	mock           sync.Mutex
