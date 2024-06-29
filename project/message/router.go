@@ -30,48 +30,8 @@ func NewRouter(
 
 	outbox.AddForwarderHandler(postgresSubscriber, publisher, router, watermillLogger)
 
-	ep, err := cqrs.NewEventProcessorWithConfig(
-		router,
-		eventProcessorConfig,
-	)
-	if err != nil {
-		panic(fmt.Errorf("failed to create new event processor: %w", err))
-	}
+	event.RegisterEventHandlers(router, eventProcessorConfig, eventHandler, watermillLogger)
+	command.RegisterCommandHandler(router, commandProcessorConfig, commandHandler)
 
-	err = ep.AddHandlers(
-		cqrs.NewEventHandler(
-			"StoreTicket",
-			eventHandler.StoreTicket,
-		),
-		cqrs.NewEventHandler(
-			"IssueReceipt",
-			eventHandler.IssueReceipt,
-		),
-		cqrs.NewEventHandler(
-			"AppendToTicketsToPrint",
-			eventHandler.AppendToTicketsToPrintSpreadsheet,
-		),
-		cqrs.NewEventHandler(
-			"PrintTicket",
-			eventHandler.PrintTicket,
-		),
-		cqrs.NewEventHandler(
-			"AppendToTicketsToRefund",
-			eventHandler.AppendToTicketsToRefundSpreadsheet,
-		),
-		cqrs.NewEventHandler(
-			"RemoveTicket",
-			eventHandler.RemoveTicket,
-		),
-		cqrs.NewEventHandler(
-			"MakeDeadNationBooking",
-			eventHandler.MakeDeadNationBooking,
-		),
-	)
-	if err != nil {
-		panic(fmt.Errorf("adding event handlers: %w", err))
-	}
-
-	command.RegisterCommandProcessor(commandProcessorConfig, router, commandHandler)
 	return router
 }

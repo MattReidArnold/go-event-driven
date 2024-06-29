@@ -8,33 +8,15 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-type PubSubAdapter interface {
-	NewSubscriber(consumerGroup string) (message.Subscriber, error)
-}
-
 func RegisterEventHandlers(
-	pubSubAdapter PubSubAdapter,
 	router *message.Router,
-	logger watermill.LoggerAdapter,
+	config cqrs.EventProcessorConfig,
 	handler *Handler,
-) error {
-	ep, err := cqrs.NewEventProcessorWithConfig(
-		router,
-		cqrs.EventProcessorConfig{
-			SubscriberConstructor: func(params cqrs.EventProcessorSubscriberConstructorParams) (message.Subscriber, error) {
-				return pubSubAdapter.NewSubscriber("svc-tickets." + params.HandlerName)
-			},
-			GenerateSubscribeTopic: func(params cqrs.EventProcessorGenerateSubscribeTopicParams) (string, error) {
-				return params.EventName, nil
-			},
-			Marshaler: cqrs.JSONMarshaler{
-				GenerateName: cqrs.StructName,
-			},
-			Logger: logger,
-		},
-	)
+	logger watermill.LoggerAdapter,
+) {
+	ep, err := cqrs.NewEventProcessorWithConfig(router, config)
 	if err != nil {
-		return err
+		panic(fmt.Errorf("creating new event processor: %w", err))
 	}
 	err = ep.AddHandlers([]cqrs.EventHandler{
 		cqrs.NewEventHandler(
@@ -69,5 +51,4 @@ func RegisterEventHandlers(
 	if err != nil {
 		panic(fmt.Errorf("adding event handlers: %w", err))
 	}
-	return err
 }
