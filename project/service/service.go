@@ -40,13 +40,13 @@ func New(
 
 	ticketsRepo := db.NewTicketsRepo(dbConn)
 	showsRepo := db.NewShowsRepo(dbConn)
-	bookingsRepo := db.NewBookingsRepository(dbConn)
+	bookingsRepo := db.NewBookingsRepository(dbConn, watermillLogger)
 
 	var redisPublisher watermillMessage.Publisher
 	redisPublisher = ticketsMessage.NewRedisPublisher(rdb, watermillLogger)
 	redisPublisher = log.CorrelationPublisherDecorator{Publisher: redisPublisher}
 
-	eventBus := event.NewEventBus(redisPublisher)
+	eventBus := event.NewEventBus(redisPublisher, event.NewBusConfig(watermillLogger))
 	commandBus := command.NewCommandBus(redisPublisher, command.NewBusConfig(watermillLogger))
 
 	eventHandler := event.NewEventHandler(

@@ -10,19 +10,21 @@ import (
 	"tickets/message/event"
 	"tickets/message/outbox"
 
+	"github.com/ThreeDotsLabs/watermill"
 	"github.com/jmoiron/sqlx"
 )
 
 type BookingsRepository struct {
-	db *sqlx.DB
+	db              *sqlx.DB
+	watermillLogger watermill.LoggerAdapter
 }
 
-func NewBookingsRepository(db *sqlx.DB) BookingsRepository {
+func NewBookingsRepository(db *sqlx.DB, watermillLogger watermill.LoggerAdapter) BookingsRepository {
 	if db == nil {
 		panic("nil db")
 	}
 
-	return BookingsRepository{db: db}
+	return BookingsRepository{db: db, watermillLogger: watermillLogger}
 }
 
 func (b BookingsRepository) addBookingTxx(ctx context.Context, booking entities.Booking, tx *sqlx.Tx) error {
@@ -70,7 +72,7 @@ func (b BookingsRepository) addBookingTxx(ctx context.Context, booking entities.
 		return fmt.Errorf("creating event bus: %w", err)
 	}
 
-	err = event.NewEventBus(outboxPublisher).Publish(ctx, entities.BookingMade{
+	err = event.NewEventBus(outboxPublisher, event.NewBusConfig(b.watermillLogger)).Publish(ctx, entities.BookingMade{
 		Header:          entities.NewEventHeader(),
 		BookingID:       booking.BookingID,
 		NumberOfTickets: booking.NumberOfTickets,

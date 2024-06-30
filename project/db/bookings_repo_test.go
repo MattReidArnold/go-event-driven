@@ -10,6 +10,7 @@ import (
 	"tickets/entities"
 	tixhttp "tickets/http"
 
+	"github.com/ThreeDotsLabs/watermill"
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func TestBookingsRepo(t *testing.T) {
 		defer cancel()
 
 		showsRepo := db.NewShowsRepo(getDb())
-		bookingsRepo := db.NewBookingsRepository(getDb())
+		bookingsRepo := db.NewBookingsRepository(getDb(), watermill.NopLogger{})
 
 		show := entities.Show{
 			ShowID:          uuid.NewString(),
@@ -61,7 +62,7 @@ func TestBookingsRepo(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		showsRepo := db.NewShowsRepo(getDb())
-		bookingsRepo := db.NewBookingsRepository(getDb())
+		bookingsRepo := db.NewBookingsRepository(getDb(), watermill.NopLogger{})
 
 		capacity := 10
 
@@ -102,7 +103,7 @@ func TestBookingsRepo(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		showsRepo := db.NewShowsRepo(getDb())
-		bookingsRepo := db.NewBookingsRepository(getDb())
+		bookingsRepo := db.NewBookingsRepository(getDb(), watermill.NopLogger{})
 
 		capacity := 1
 

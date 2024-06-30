@@ -7,15 +7,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-func NewEventBus(pub message.Publisher) *cqrs.EventBus {
-	bus, err := cqrs.NewEventBusWithConfig(pub, cqrs.EventBusConfig{
-		Marshaler: cqrs.JSONMarshaler{
-			GenerateName: cqrs.StructName,
-		},
-		GeneratePublishTopic: func(params cqrs.GenerateEventPublishTopicParams) (string, error) {
-			return params.EventName, nil
-		},
-	})
+func NewEventBus(pub message.Publisher, config cqrs.EventBusConfig) *cqrs.EventBus {
+	bus, err := cqrs.NewEventBusWithConfig(pub, config)
 	if err != nil {
 		panic(fmt.Errorf("creating event bus: %w", err))
 	}
