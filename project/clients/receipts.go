@@ -7,6 +7,7 @@ import (
 	"sync"
 	"tickets/entities"
 	"tickets/message/command"
+	"tickets/message/event"
 
 	"github.com/ThreeDotsLabs/go-event-driven/common/clients"
 	"github.com/ThreeDotsLabs/go-event-driven/common/clients/receipts"
@@ -16,13 +17,15 @@ type receiptsClient struct {
 	clients *clients.Clients
 }
 
+var _ event.ReceiptService = &receiptsClient{}
+
 func NewReceiptsClient(clients *clients.Clients) receiptsClient {
 	return receiptsClient{
 		clients: clients,
 	}
 }
 
-func (c receiptsClient) IssueReceipt(ctx context.Context, req entities.IssueReceiptRequest) error {
+func (c receiptsClient) IssueReceipt(ctx context.Context, req entities.IssueReceiptRequest) (entities.IssueReceiptResponse, error) {
 	idempotencyKey := req.IdempotencyKey + req.TicketID
 	body := receipts.PutReceiptsJSONRequestBody{
 		IdempotencyKey: &idempotencyKey,
@@ -33,15 +36,26 @@ func (c receiptsClient) IssueReceipt(ctx context.Context, req entities.IssueRece
 		},
 	}
 
-	receiptsResp, err := c.clients.Receipts.PutReceiptsWithResponse(ctx, body)
+	resp, err := c.clients.Receipts.PutReceiptsWithResponse(ctx, body)
 	if err != nil {
-		return err
+		return entities.IssueReceiptResponse{}, fmt.Errorf("making call to receipts client: %w", err)
 	}
-	if receiptsResp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %v", receiptsResp.StatusCode())
+	switch resp.StatusCode() {
+	case http.StatusOK:
+		// receipt already exists
+		return entities.IssueReceiptResponse{
+			ReceiptNumber: resp.JSON200.Number,
+			IssuedAt:      resp.JSON200.IssuedAt,
+		}, nil
+	case http.StatusCreated:
+		// receipt was created
+		return entities.IssueReceiptResponse{
+			ReceiptNumber: resp.JSON201.Number,
+			IssuedAt:      resp.JSON201.IssuedAt,
+		}, nil
+	default:
+		return entities.IssueReceiptResponse{}, fmt.Errorf("unexpected status code for POST receipts-api/receipts: %d", resp.StatusCode())
 	}
-
-	return nil
 }
 
 func (c receiptsClient) VoidReceipt(ctx context.Context, command *entities.RefundTicket) error {

@@ -39,8 +39,7 @@ func NewEventHandler(
 }
 
 type ReceiptService interface {
-	IssueReceipt(ctx context.Context, req entities.IssueReceiptRequest) error
-	// IssueReceipt(ctx context.Context, req entities.IssueReceiptRequest) (entities.IssueReceiptResponse, error)
+	IssueReceipt(ctx context.Context, req entities.IssueReceiptRequest) (entities.IssueReceiptResponse, error)
 }
 
 type SpreadsheetsAPI interface {
